@@ -45,6 +45,4 @@ The project is organized as follows:
 
     / usecases
         - бизнес логика
-
-    /
 ```

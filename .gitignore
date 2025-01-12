@@ -1,0 +1,5 @@
+tmp/
+.DS_Store
+storage/
+.env
+config/config.*.yml

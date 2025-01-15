@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package auth;
+
+option go_package="auth.gen";
+
+// Auth сервис для управления доступом и разрешениями
+service Auth {
+    // ==================================== Authentification ========================================
+    rpc Register (RegisterRequest) returns (RegisterResponse);
+    rpc Login (LoginRequest) returns (LoginResponse);
+
+    // ======================================= Permissions ==========================================
+    // Check if current user token is valid
+    rpc CheckToken (CheckRequest) returns (CheckResponse);
+    rpc RefreshToken (RefreshRequest) returns (RefreshResponse);
+
+}
+
+message RegisterRequest {
+    string email = 1;
+    string password = 2;
+}
+
+message RegisterResponse { 
+    int64 uid = 1; 
+}
+
+message LoginRequest {
+    string email = 1;
+    string password = 2;
+}
+
+message LoginResponse {
+    string token = 1;
+}
+
+message CheckRequest {
+    string token = 1;
+}
+
+message CheckResponse {
+    bool status = 1;
+    string reason = 2;
+}
+
+message RefreshRequest {
+    string refresh_token = 1;
+}
+
+message RefreshResponse {
+    string token = 1;
+    string new_refresh_token = 2;
+}

@@ -46,5 +46,7 @@ The project is organized as follows:
     / usecases
         - бизнес логика
 
-    /
+/ migrations
+    - миграции для базы данных
+    ( .sql файлы )
 ```

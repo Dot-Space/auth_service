@@ -13,6 +13,7 @@ type Config struct {
 	GRPC           GRPCConfig `yaml:"grpc"`
 	MigrationsPath string
 	TokenTTL       time.Duration `yaml:"token_ttl" env-default:"1h"`
+	JwtSecret      string        `yaml:"jwt_secret" env-default:"someSecret"`
 	DB             DBConfig
 }
 

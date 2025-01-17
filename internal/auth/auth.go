@@ -103,7 +103,7 @@ func (a *Auth) Login(ctx context.Context, email string, password string, secret 
 
 	log.Info("User logged in successfully")
 
-	token, err := jwt.NewToken(user, secret, a.tokenTTL)
+	token, err := jwt.NewToken(user, secret, a.tokenTTL, "access")
 	if err != nil {
 		a.log.Error("Couldnt create token", ecfs.Err(err))
 
@@ -111,4 +111,26 @@ func (a *Auth) Login(ctx context.Context, email string, password string, secret 
 	}
 
 	return token, nil
+}
+
+func (a *Auth) CheckToken(token string, secret string, tokenType string) (bool, error) {
+	const op = "auth.CheckToken"
+
+	isValid, err := jwt.ValidateToken(token, secret, tokenType)
+	if err != nil {
+		return isValid, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return isValid, nil
+}
+
+func (a *Auth) RefreshToken(refreshToken string, secret string, duration time.Duration) (string, error) {
+	const op = "auth.RefreshToken"
+
+	newToken, err := jwt.RefreshToken(refreshToken, secret, duration)
+	if err != nil {
+		return "", fmt.Errorf("%s: %w", op, err)
+	}
+
+	return newToken, nil
 }

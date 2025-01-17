@@ -16,7 +16,7 @@ type UserClaims struct {
 	jwt.MapClaims
 }
 
-func CreateToken(userClaims *UserClaims, secret string) (string, error) {
+func createToken(userClaims *UserClaims, secret string) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 
 	token.Claims = *userClaims
@@ -37,7 +37,7 @@ func NewToken(user models.User, secret string, duration time.Duration, tokenType
 		Exp:       time.Now().Add(duration).Unix(),
 	}
 
-	tokenString, err := CreateToken(userClaims, secret)
+	tokenString, err := createToken(userClaims, secret)
 	if err != nil {
 		return "", err
 	}
@@ -63,7 +63,7 @@ func ValidateToken(token string, secret string, tokenType string) (bool, error) 
 	return parsedToken.Valid, nil
 }
 
-func RefreshToken(token string, secret string, duration time.Duration) (string, error) {
+func RefreshToken(token string, secret string, duration time.Duration) (string, string, error) {
 	userClaims := &UserClaims{}
 
 	_, err := jwt.ParseWithClaims(token, userClaims, func(t *jwt.Token) (interface{}, error) {
@@ -71,15 +71,18 @@ func RefreshToken(token string, secret string, duration time.Duration) (string, 
 	})
 
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
+
+	newRefreshToken, err := createToken(userClaims, secret)
 
 	userClaims.Exp = time.Now().Add(duration).Unix()
+	userClaims.TokenType = "access"
 
-	refreshedToken, err := CreateToken(userClaims, secret)
+	refreshedToken, err := createToken(userClaims, secret)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	return refreshedToken, nil
+	return refreshedToken, newRefreshToken, nil
 }

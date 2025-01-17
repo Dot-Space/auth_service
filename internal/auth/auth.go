@@ -124,13 +124,19 @@ func (a *Auth) CheckToken(token string, secret string, tokenType string) (bool, 
 	return isValid, nil
 }
 
-func (a *Auth) RefreshToken(refreshToken string, secret string, duration time.Duration) (string, error) {
+func (a *Auth) RefreshToken(refreshToken string, secret string) (string, string, error) {
 	const op = "auth.RefreshToken"
 
-	newToken, err := jwt.RefreshToken(refreshToken, secret, duration)
-	if err != nil {
-		return "", fmt.Errorf("%s: %w", op, err)
+	isValid, err := jwt.ValidateToken(refreshToken, secret, "refresh")
+
+	if !isValid {
+		return "", "", fmt.Errorf("%s: %s", op, "InvalidToken")
 	}
 
-	return newToken, nil
+	newAccessToken, newRefreshToken, err := jwt.RefreshToken(refreshToken, secret, a.tokenTTL)
+	if err != nil {
+		return "", "", fmt.Errorf("%s: %w", op, err)
+	}
+
+	return newAccessToken, newRefreshToken, nil
 }

@@ -13,12 +13,14 @@ import (
 func (s *Storage) SaveUser(ctx context.Context, email string, passHash []byte) (int64, error) {
 	const op = "db.SaveUser"
 
-	stmt, err := s.db.Prepare("INSERT INTO users (email, pass_hash) VALUES (?, ?)")
+	fmt.Println(email, passHash)
+
+	stmt, err := s.db.Prepare("INSERT INTO users (email, pass_hash) VALUES ($1, $2) RETURNING id")
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
-	res, err := stmt.ExecContext(ctx, email, passHash)
+	row := stmt.QueryRowContext(ctx, email, passHash)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			if pqErr.Code.Name() == "unique_violation" {
@@ -29,7 +31,8 @@ func (s *Storage) SaveUser(ctx context.Context, email string, passHash []byte) (
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 
-	id, err := res.LastInsertId()
+	var id int64
+	err = row.Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
@@ -40,7 +43,7 @@ func (s *Storage) SaveUser(ctx context.Context, email string, passHash []byte) (
 func (s *Storage) GetUser(ctx context.Context, email string) (models.User, error) {
 	const op = "db.GetUser"
 
-	stmt, err := s.db.Prepare("SELECT id, email, pass_hash FROM users WHERE email = ?")
+	stmt, err := s.db.Prepare("SELECT id, email, pass_hash FROM users WHERE email = $1")
 	if err != nil {
 		return models.User{}, fmt.Errorf("%s: %w", op, err)
 	}

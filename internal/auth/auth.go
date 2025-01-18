@@ -69,7 +69,7 @@ func (a *Auth) RegisterUser(ctx context.Context, email string, password string) 
 
 			return 0, fmt.Errorf("%s: %w", op, ErrUserAlreadyExists)
 		}
-		log.Error("Failed to save user")
+		log.Error("Failed to save user", ecfs.Err(err))
 
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
@@ -77,7 +77,7 @@ func (a *Auth) RegisterUser(ctx context.Context, email string, password string) 
 	return id, nil
 }
 
-func (a *Auth) Login(ctx context.Context, email string, password string) (string, error) {
+func (a *Auth) Login(ctx context.Context, email string, password string) (string, string, error) {
 	const op = "auth.Login"
 
 	log := a.log.With(
@@ -90,30 +90,37 @@ func (a *Auth) Login(ctx context.Context, email string, password string) (string
 		if errors.Is(err, db.ErrUserNotFound) {
 			a.log.Warn("User not found", ecfs.Err(err))
 
-			return "", fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
+			return "", "", fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
 		}
 
 		a.log.Error("Failed to get user")
 
-		return "", fmt.Errorf("%s: %w", op, err)
+		return "", "", fmt.Errorf("%s: %w", op, err)
 	}
 
 	if err := bcrypt.CompareHashAndPassword(user.PassHash, []byte(password)); err != nil {
 		a.log.Info("Invalid credentials", ecfs.Err(err))
 
-		return "", fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
+		return "", "", fmt.Errorf("%s: %w", op, ErrInvalidCredentials)
 	}
 
 	log.Info("User logged in successfully")
 
 	token, err := jwt.NewToken(user, a.jwtSecret, a.tokenTTL, "access")
 	if err != nil {
-		a.log.Error("Couldnt create token", ecfs.Err(err))
+		a.log.Error("Couldnt create access token", ecfs.Err(err))
 
-		return "", fmt.Errorf("%s: %w", op, err)
+		return "", "", fmt.Errorf("%s: %w", op, err)
 	}
 
-	return token, nil
+	refreshToken, err := jwt.NewToken(user, a.jwtSecret, a.tokenTTL, "refresh")
+	if err != nil {
+		a.log.Error("Couldnt create refresh token", ecfs.Err(err))
+
+		return "", "", fmt.Errorf("%s: %w", op, err)
+	}
+
+	return token, refreshToken, nil
 }
 
 func (a *Auth) CheckToken(ctx context.Context, token string, tokenType string) (bool, error) {

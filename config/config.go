@@ -47,12 +47,20 @@ func MustLoad() *Config {
 		panic("Config file is empty!")
 	}
 
-	if err := cleanenv.ReadEnv(&cfg.DB); err != nil {
-		panic("Environment variables are empty!")
-	}
+	cfg.DB = *LoadDbConfig()
 
 	if err := cleanenv.ReadEnv(&cfg); err != nil {
 		panic("Environment variables are empty!")
+	}
+
+	return &cfg
+}
+
+func LoadDbConfig() *DBConfig {
+	var cfg DBConfig
+
+	if err := cleanenv.ReadEnv(&cfg); err != nil {
+		panic(err)
 	}
 
 	return &cfg

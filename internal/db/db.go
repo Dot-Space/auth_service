@@ -16,13 +16,15 @@ func New(config *config.DBConfig) (*Storage, error) {
 	const op = "db.New"
 
 	psqlInfo := fmt.Sprintf(
-		"host=%s port=%d user=&s password=%s dbname=%s sslmode=disable",
+		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable ",
 		config.Host,
 		config.Port,
 		config.User,
 		config.Password,
 		config.DBName,
 	)
+
+	fmt.Println(psqlInfo)
 
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {

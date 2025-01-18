@@ -34,7 +34,7 @@ type AuthClient interface {
 	// ==================================== Authentification ========================================
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error)
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
-	// ======================================= Permissions ==========================================
+	// ====================================== Permissions ===========================================
 	// Check if current user token is valid
 	CheckToken(ctx context.Context, in *CheckRequest, opts ...grpc.CallOption) (*CheckResponse, error)
 	RefreshToken(ctx context.Context, in *RefreshRequest, opts ...grpc.CallOption) (*RefreshResponse, error)

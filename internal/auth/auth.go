@@ -23,6 +23,7 @@ type Auth struct {
 	log             *slog.Logger
 	storageProvider StorageProvider
 	tokenTTL        time.Duration
+	jwtSecret       string
 }
 
 type StorageProvider interface {
@@ -34,11 +35,13 @@ func New(
 	log *slog.Logger,
 	storageProvider StorageProvider,
 	tokenTTL time.Duration,
+	jwtSecret string,
 ) *Auth {
 	return &Auth{
 		log:             log,
 		storageProvider: storageProvider,
 		tokenTTL:        tokenTTL,
+		jwtSecret:       jwtSecret,
 	}
 }
 
@@ -74,7 +77,7 @@ func (a *Auth) RegisterUser(ctx context.Context, email string, password string) 
 	return id, nil
 }
 
-func (a *Auth) Login(ctx context.Context, email string, password string, secret string) (string, error) {
+func (a *Auth) Login(ctx context.Context, email string, password string) (string, error) {
 	const op = "auth.Login"
 
 	log := a.log.With(
@@ -103,7 +106,7 @@ func (a *Auth) Login(ctx context.Context, email string, password string, secret 
 
 	log.Info("User logged in successfully")
 
-	token, err := jwt.NewToken(user, secret, a.tokenTTL, "access")
+	token, err := jwt.NewToken(user, a.jwtSecret, a.tokenTTL, "access")
 	if err != nil {
 		a.log.Error("Couldnt create token", ecfs.Err(err))
 
@@ -113,10 +116,10 @@ func (a *Auth) Login(ctx context.Context, email string, password string, secret 
 	return token, nil
 }
 
-func (a *Auth) CheckToken(token string, secret string, tokenType string) (bool, error) {
+func (a *Auth) CheckToken(ctx context.Context, token string, tokenType string) (bool, error) {
 	const op = "auth.CheckToken"
 
-	isValid, err := jwt.ValidateToken(token, secret, tokenType)
+	isValid, err := jwt.ValidateToken(token, a.jwtSecret, tokenType)
 	if err != nil {
 		return isValid, fmt.Errorf("%s: %w", op, err)
 	}
@@ -124,16 +127,16 @@ func (a *Auth) CheckToken(token string, secret string, tokenType string) (bool, 
 	return isValid, nil
 }
 
-func (a *Auth) RefreshToken(refreshToken string, secret string) (string, string, error) {
+func (a *Auth) RefreshToken(ctx context.Context, refreshToken string) (string, string, error) {
 	const op = "auth.RefreshToken"
 
-	isValid, err := jwt.ValidateToken(refreshToken, secret, "refresh")
+	isValid, err := jwt.ValidateToken(refreshToken, a.jwtSecret, "refresh")
 
 	if !isValid {
 		return "", "", fmt.Errorf("%s: %s", op, "InvalidToken")
 	}
 
-	newAccessToken, newRefreshToken, err := jwt.RefreshToken(refreshToken, secret, a.tokenTTL)
+	newAccessToken, newRefreshToken, err := jwt.RefreshToken(refreshToken, a.jwtSecret, a.tokenTTL)
 	if err != nil {
 		return "", "", fmt.Errorf("%s: %w", op, err)
 	}

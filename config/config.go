@@ -13,7 +13,7 @@ type Config struct {
 	GRPC           GRPCConfig `yaml:"grpc"`
 	MigrationsPath string
 	TokenTTL       time.Duration `yaml:"token_ttl" env-default:"1h"`
-	JwtSecret      string        `yaml:"jwt_secret" env-default:"someSecret"`
+	JwtSecret      string        `env:"JWT_SECRET"`
 	DB             DBConfig
 }
 
@@ -48,6 +48,10 @@ func MustLoad() *Config {
 	}
 
 	if err := cleanenv.ReadEnv(&cfg.DB); err != nil {
+		panic("Environment variables are empty!")
+	}
+
+	if err := cleanenv.ReadEnv(&cfg); err != nil {
 		panic("Environment variables are empty!")
 	}
 
